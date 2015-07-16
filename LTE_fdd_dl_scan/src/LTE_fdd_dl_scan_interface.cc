@@ -1643,6 +1643,18 @@ void LTE_fdd_dl_scan_interface::handle_help(void)
     }else{
         tmp_str += "off";
     }
+
+    // Enable PCAP
+    tmp_str  = "\t\t";
+    tmp_str += ENABLE_PCAP_PARAM;
+    tmp_str += " = ";
+    if(true == enable_pcap)
+    {
+        tmp_str += "on";
+    }else{
+        tmp_str += "off";
+    }
+
     send_ctrl_msg(tmp_str);
 }
 

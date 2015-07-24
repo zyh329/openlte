@@ -105,6 +105,12 @@ LTE_fdd_enb_gw::~LTE_fdd_enb_gw()
     stop();
 }
 
+#include<boost/format.hpp>
+void dbg_print(std::string str) {
+    LTE_fdd_enb_interface* enb = LTE_fdd_enb_interface::get_instance();
+    enb->send_ctrl_error_msg(LTE_FDD_ENB_ERROR_EXCEPTION, str);
+}
+
 /********************/
 /*    Start/Stop    */
 /********************/
@@ -127,6 +133,8 @@ LTE_FDD_ENB_ERROR_ENUM LTE_fdd_enb_gw::start(LTE_fdd_enb_msgq      *from_pdcp,
     char                       dev[IFNAMSIZ] = "tun_openlte";
     uint32                     ip_addr;
 
+    dbg_print(" Starting...");
+
     if(!started)
     {
         interface = iface;
@@ -140,6 +148,7 @@ LTE_FDD_ENB_ERROR_ENUM LTE_fdd_enb_gw::start(LTE_fdd_enb_msgq      *from_pdcp,
         {
             err_str = strerror(errno);
             started = false;
+	    dbg_print("Error constructing tun\n");
             return(LTE_FDD_ENB_ERROR_CANT_START);
         }
         memset(&ifr, 0, sizeof(ifr));
@@ -150,6 +159,7 @@ LTE_FDD_ENB_ERROR_ENUM LTE_fdd_enb_gw::start(LTE_fdd_enb_msgq      *from_pdcp,
             err_str = strerror(errno);
             started = false;
             close(tun_fd);
+            dbg_print("Error setting up tun\n");
             return(LTE_FDD_ENB_ERROR_CANT_START);
         }
 
@@ -162,6 +172,7 @@ LTE_FDD_ENB_ERROR_ENUM LTE_fdd_enb_gw::start(LTE_fdd_enb_msgq      *from_pdcp,
             err_str = strerror(errno);
             started = false;
             close(tun_fd);
+            dbg_print("Error setting ip address\n");
             return(LTE_FDD_ENB_ERROR_CANT_START);
         }
         ifr.ifr_netmask.sa_family                                 = AF_INET;
@@ -171,6 +182,7 @@ LTE_FDD_ENB_ERROR_ENUM LTE_fdd_enb_gw::start(LTE_fdd_enb_msgq      *from_pdcp,
             err_str = strerror(errno);
             started = false;
             close(tun_fd);
+            dbg_print("Error SIOCSIFNETMASK\n");
             return(LTE_FDD_ENB_ERROR_CANT_START);
         }
 
@@ -180,6 +192,7 @@ LTE_FDD_ENB_ERROR_ENUM LTE_fdd_enb_gw::start(LTE_fdd_enb_msgq      *from_pdcp,
             err_str = strerror(errno);
             started = false;
             close(tun_fd);
+            dbg_print("Error bringing up interface\n");
             return(LTE_FDD_ENB_ERROR_CANT_START);
         }
         ifr.ifr_flags |= IFF_UP | IFF_RUNNING;
@@ -188,6 +201,7 @@ LTE_FDD_ENB_ERROR_ENUM LTE_fdd_enb_gw::start(LTE_fdd_enb_msgq      *from_pdcp,
             err_str = strerror(errno);
             started = false;
             close(tun_fd);
+            dbg_print("Error SIOCSIFFLAGS2\n");
             return(LTE_FDD_ENB_ERROR_CANT_START);
         }
 
@@ -198,8 +212,10 @@ LTE_FDD_ENB_ERROR_ENUM LTE_fdd_enb_gw::start(LTE_fdd_enb_msgq      *from_pdcp,
 
         // Setup a thread to receive packets from the TUN device
         pthread_create(&rx_thread, NULL, &receive_thread, this);
+	dbg_print(" created thread");
     }
 
+    dbg_print(" Returning");
     return(LTE_FDD_ENB_ERROR_NONE);
 }
 void LTE_fdd_enb_gw::stop(void)

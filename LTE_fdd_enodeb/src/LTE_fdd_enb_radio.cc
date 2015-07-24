@@ -51,6 +51,7 @@
 
 #include "LTE_fdd_enb_radio.h"
 #include "LTE_fdd_enb_phy.h"
+#include "LTE_fdd_enb_gw.h"
 #include "liblte_interface.h"
 #include <uhd/device.hpp>
 #include <uhd/types/device_addr.hpp>
@@ -176,9 +177,15 @@ LTE_FDD_ENB_ERROR_ENUM LTE_fdd_enb_radio::start(void)
                 usrp->set_clock_source(clock_source);
                 if(!master_clock_set)
                 {
+                    double original_rate = usrp->get_master_clock_rate();
                     usrp->set_master_clock_rate(30720000);
                     if(2.0 >= fabs(usrp->get_master_clock_rate() - 30720000.0))
                     {
+                        master_clock_set = true;
+                    } else  {
+                        std::cout << "smaller value " << usrp->get_master_clock_rate() << "\n"
+                        	<< "changed by " << fabs(original_rate - usrp->get_master_clock_rate()) << "\n"
+                       	        << "FIXME\n";
                         master_clock_set = true;
                     }
                 }
@@ -214,6 +221,7 @@ LTE_FDD_ENB_ERROR_ENUM LTE_fdd_enb_radio::start(void)
                     err     = LTE_FDD_ENB_ERROR_MASTER_CLOCK_FAIL;
                 }
             }catch(...){
+		dbg_print(" Radio: Catched Error");
                 started = false;
                 return(err);
             }
@@ -226,6 +234,8 @@ LTE_FDD_ENB_ERROR_ENUM LTE_fdd_enb_radio::start(void)
         }
     }
 
+    std::string msg = str(boost::format("Radio: Returning, started=%1%") % started);
+    dbg_print(msg);
     return(err);
 }
 LTE_FDD_ENB_ERROR_ENUM LTE_fdd_enb_radio::stop(void)
